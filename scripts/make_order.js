@@ -20,8 +20,7 @@ const NETWORK = process.env.NETWORK;
 const API_KEY = process.env.API_KEY || ""; // API key is optional but useful if you're doing a high volume of requests.
 
 //Wallet Initialization
-var privateKey = process.env.PRIVATE_KEY;
-console.log(privateKey);
+const privateKey = process.env.PRIVATE_KEY;
 var privateKeyBuffer = new Buffer(privateKey, "hex")
 var myWallet = walletFactory.fromPrivateKey(privateKeyBuffer)
 
@@ -54,7 +53,7 @@ const infuraRpcSubprovider = new RPCSubprovider({
 });
 
 const providerEngine = new Web3ProviderEngine();
-providerEngine.addProvider(mnemonicWalletSubprovider);
+//providerEngine.addProvider(mnemonicWalletSubprovider);
 providerEngine.addProvider(infuraRpcSubprovider);
 providerEngine.addProvider(new WalletSubprovider(myWallet))
 providerEngine.start();
@@ -72,61 +71,23 @@ const seaport = new OpenSeaPort(
 );
 
 async function main() {
-  // Example: simple fixed-price sale of an item owned by a user.
-  console.log("Auctioning an item for a fixed price...");
-  const fixedPriceSellOrder = await seaport.createSellOrder({
-    asset: {
-      tokenId: "1",
-      tokenAddress: NFT_CONTRACT_ADDRESS,
-      schemaName: WyvernSchemaName.ERC721
-    },
-    startAmount: 0.05,
-    expirationTime: 0,
-    accountAddress: OWNER_ADDRESS,
-  });
-  console.log(
-    `Successfully created a fixed-price sell order! ${fixedPriceSellOrder.asset.openseaLink}\n`
-  );
+    const expirationTime = Math.round(Date.now() / 1000 + 60 * 60 * 1);
 
-  // // Example: Dutch auction.
-  console.log("Dutch auctioning an item...");
-  const expirationTime = Math.round(Date.now() / 1000 + 60 * 60 * 24);
-  const dutchAuctionSellOrder = await seaport.createSellOrder({
-    asset: {
-      tokenId: "2",
-      tokenAddress: NFT_CONTRACT_ADDRESS,
-      schemaName: WyvernSchemaName.ERC721
-    },
-    startAmount: 0.05,
-    endAmount: 0.01,
-    expirationTime: expirationTime,
-    accountAddress: OWNER_ADDRESS,
-  });
-  console.log(
-    `Successfully created a dutch auction sell order! ${dutchAuctionSellOrder.asset.openseaLink}\n`
-  );
+    const offer = await seaport.createBuyOrder({
+        asset: {
+            tokenId: "100",
+            tokenAddress: NFT_CONTRACT_ADDRESS,
+            schemaName: WyvernSchemaName.ERC721
+        },
+        accountAddress: OWNER_ADDRESS,
+        expirationTime: expirationTime,
+        // Value of the offer, in units of the payment token (or wrapped ETH if none is specified):
+        startAmount: 0.001,
+    })
 
-  // Example: English auction.
-  console.log("English auctioning an item in DAI...");
-  const wethAddress =
-    NETWORK === "mainnet" || NETWORK === "live"
-      ? "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-      : "0xc778417e063141139fce010982780140aa0cd5ab";
-  const englishAuctionSellOrder = await seaport.createSellOrder({
-    asset: {
-      tokenId: "3",
-      tokenAddress: NFT_CONTRACT_ADDRESS,
-      schemaName: WyvernSchemaName.ERC721
-    },
-    startAmount: 0.03,
-    expirationTime: expirationTime,
-    waitForHighestBid: true,
-    paymentTokenAddress: wethAddress,
-    accountAddress: OWNER_ADDRESS,
-  });
-  console.log(
-    `Successfully created an English auction sell order! ${englishAuctionSellOrder.asset.openseaLink}\n`
-  );
+    console.log(
+        `Successfully created a limit buy order! ${offer.asset.openseaLink}\n`
+    );
 }
 
 main();
